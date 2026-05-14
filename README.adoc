@@ -39,6 +39,7 @@ Release notes can be found in the link:https://github.com/jenkinsci/rest-list-pa
 * Optional value post processing
 ** Filter the already parsed values via a REGEX
 ** Apply a sort order to the values
+** Decorate the displayed value via a regex/replacement pair (e.g. trim a prefix, append a suffix, or reformat with capture groups)
 
 [#configuration]
 == Configuration
@@ -89,6 +90,57 @@ The optional 'display value' configuration, hidden within the advanced configura
 ----
 
 With a `Value Expression` such as `$.*` and a `Display Expression` such as `$.name` the values in the dropdown would only show up as the name property of each JSON object (i.e. `v10.7.7`).
+
+[#displayDecoration]
+==== Display Decoration (regex transform)
+
+The optional `Display Decoration Pattern` and `Display Decoration Replacement` fields in the Advanced section apply a Java regex `replaceAll` to every <em>display value</em> after it is parsed.
+The underlying value passed into the pipeline is *never modified* &mdash; only what the user sees in the dropdown.
+Use it to trim a prefix, append a suffix, or reformat with capture groups, without touching the upstream REST response or the `Value Expression`.
+
+image::.media/configuration-display_decoration.png[Display Decoration configuration (Display Expression + Pattern + Replacement)]
+
+.Common patterns
+[cols="2,1,3"]
+|===
+|Goal |Pattern |Replacement
+
+|Strip leading `v` (`v10.7.7` &rarr; `10.7.7`)
+|`^v`
+|_(empty)_
+
+|Append a literal suffix (`10.7.7` &rarr; `10.7.7 (stable)`)
+|`$`
+|` (stable)`
+
+|Reformat with a capture group (`v10.7.7-beta` &rarr; `Release 10.7.7`)
+|`^v(\d+\.\d+\.\d+).*`
+|`Release $1`
+|===
+
+When the pattern is empty the display value is left untouched.
+An invalid regex is logged as a warning and the original display value is shown.
+
+image::.media/trigger-build_dropdown_decorated.png[Decorated dropdown — the option text reads "Release 10.11.8" while the option value remains "v10.11.8"]
+
+[IMPORTANT]
+====
+**Triggering this job from another pipeline (e.g. `build job: ...`) must pass the raw value from the list, not the decorated label the user sees.**
+The decoration is purely cosmetic for the dropdown; parameter validation always runs against the raw values returned by the REST endpoint. Passing the decorated string fails with `IllegalArgumentException: Illegal value for parameter ...`.
+
+[source,groovy]
+----
+// upstream value list contains `v10.11.8`, displayed as `Release 10.11.8`
+
+// ✅ correct — pass the raw value
+build job: 'downstream',
+      parameters: [string(name: 'VERSION', value: 'v10.11.8')]
+
+// ❌ wrong — the decorated label is not a valid parameter value
+build job: 'downstream',
+      parameters: [string(name: 'VERSION', value: 'Release 10.11.8')]
+----
+====
 
 [#xPath-configuration]
 === xPath configuration
@@ -168,10 +220,12 @@ pipeline {
       credentialId: '',
       mimeType: 'APPLICATION_JSON',
       valueExpression: '$.*',
-      cacheTime: 10,    // optional
-      defaultValue: '', // optional
-      filter: '.*',     // optional
-      valueOrder: 'ASC' // optional
+      cacheTime: 10,                                 // optional
+      defaultValue: '',                              // optional
+      filter: '.*',                                  // optional
+      valueOrder: 'ASC',                             // optional
+      displayDecorationPattern: '^v(\\d+\\.\\d+\\.\\d+).*', // optional
+      displayDecorationReplacement: 'Release $1'     // optional
     )
   }
 
@@ -199,10 +253,12 @@ pipelineJob('DemoJob') {
       credentialId('credID')
       mimeType('APPLICATION_JSON')
       valueExpression('$.*')
-      cacheTime(10)       // optional
-      defaultValue('')    // optional
-      filter('.*')        // optional
-      valueOrder('NONE')  // optional
+      cacheTime(10)                                      // optional
+      defaultValue('')                                   // optional
+      filter('.*')                                       // optional
+      valueOrder('NONE')                                 // optional
+      displayDecorationPattern('^v(\\d+\\.\\d+\\.\\d+).*') // optional
+      displayDecorationReplacement('Release $1')         // optional
     }
   }
   definition {

@@ -121,6 +121,39 @@ class ValueResolverTest {
     assertEquals("v10.6.4", displayValue);
   }
 
+  // Display decoration tests
+  @Test
+  void displayDecorationStripsPrefix() {
+    assertEquals("10.6.4", ValueResolver.applyDisplayDecoration("v10.6.4", "^v", ""));
+  }
+
+  @Test
+  void displayDecorationAppendsSuffix() {
+    assertEquals("10.6.4 (stable)", ValueResolver.applyDisplayDecoration("10.6.4", "$", " (stable)"));
+  }
+
+  @Test
+  void displayDecorationUsesCaptureGroups() {
+    assertEquals("Release 10.6.4",
+                 ValueResolver.applyDisplayDecoration("v10.6.4-beta", "^v(\\d+\\.\\d+\\.\\d+).*", "Release $1"));
+  }
+
+  @Test
+  void displayDecorationEmptyPatternIsNoop() {
+    assertEquals("v10.6.4", ValueResolver.applyDisplayDecoration("v10.6.4", "", "ignored"));
+    assertEquals("v10.6.4", ValueResolver.applyDisplayDecoration("v10.6.4", null, "ignored"));
+  }
+
+  @Test
+  void displayDecorationInvalidPatternReturnsOriginal() {
+    assertEquals("v10.6.4", ValueResolver.applyDisplayDecoration("v10.6.4", "[unterminated", "x"));
+  }
+
+  @Test
+  void displayDecorationNullReplacementTreatedAsEmpty() {
+    assertEquals("10.6.4", ValueResolver.applyDisplayDecoration("v10.6.4", "^v", null));
+  }
+
   // xPath Tests
   @Test
   void resolveXPathTest() {

@@ -38,6 +38,8 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
   private final MimeType mimeType;
   private final String valueExpression;
   private String displayExpression;
+  private String displayDecorationPattern;
+  private String displayDecorationReplacement;
   private ValueOrder valueOrder;
   private String defaultValue;
   private String filter;
@@ -81,6 +83,8 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
     if (mimeType == MimeType.APPLICATION_JSON) {
       this.displayExpression = displayExpression != null && !displayExpression.isBlank() ? displayExpression : "$";
     }
+    this.displayDecorationPattern = "";
+    this.displayDecorationReplacement = "";
     this.defaultValue = defaultValue != null && !defaultValue.trim().isEmpty() ? defaultValue : "";
     this.valueOrder = valueOrder != null ? valueOrder : ValueOrder.NONE;
     this.filter = !filter.isBlank() ? filter : ".*";
@@ -97,6 +101,8 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
                                       final MimeType mimeType,
                                       final String valueExpression,
                                       final String displayExpression,
+                                      final String displayDecorationPattern,
+                                      final String displayDecorationReplacement,
                                       final ValueOrder valueOrder,
                                       final String filter,
                                       final Integer cacheTime,
@@ -113,6 +119,8 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
     if (mimeType == MimeType.APPLICATION_JSON) {
       this.displayExpression = displayExpression != null && !displayExpression.isBlank() ? displayExpression : "$";
     }
+    this.displayDecorationPattern = displayDecorationPattern != null ? displayDecorationPattern : "";
+    this.displayDecorationReplacement = displayDecorationReplacement != null ? displayDecorationReplacement : "";
     this.defaultValue = defaultValue != null && !defaultValue.trim().isEmpty() ? defaultValue : "";
     this.valueOrder = valueOrder != null ? valueOrder : ValueOrder.NONE;
     this.filter = !filter.isBlank() ? filter : ".*";
@@ -152,6 +160,24 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
   @DataBoundSetter
   public void setDisplayExpression(final String displayExpression) {
     this.displayExpression = displayExpression;
+  }
+
+  public String getDisplayDecorationPattern() {
+    return displayDecorationPattern != null ? displayDecorationPattern : "";
+  }
+
+  @DataBoundSetter
+  public void setDisplayDecorationPattern(final String displayDecorationPattern) {
+    this.displayDecorationPattern = displayDecorationPattern != null ? displayDecorationPattern : "";
+  }
+
+  public String getDisplayDecorationReplacement() {
+    return displayDecorationReplacement != null ? displayDecorationReplacement : "";
+  }
+
+  @DataBoundSetter
+  public void setDisplayDecorationReplacement(final String displayDecorationReplacement) {
+    this.displayDecorationReplacement = displayDecorationReplacement != null ? displayDecorationReplacement : "";
   }
 
   @DataBoundSetter
@@ -220,7 +246,9 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
       getValueExpression(),
       getDisplayExpression(),
       getFilter(),
-      getValueOrder());
+      getValueOrder(),
+      getDisplayDecorationPattern(),
+      getDisplayDecorationReplacement());
 
     setErrorMsg(container.getErrorMsg().orElse(""));
     values = container.getValue();
@@ -231,10 +259,16 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
   public ParameterDefinition copyWithDefaultValue(final ParameterValue defaultValue) {
     if (defaultValue instanceof RestListParameterValue) {
       RestListParameterValue value = (RestListParameterValue) defaultValue;
+      String defaultDisplay = ValueResolver.applyDisplayDecoration(
+        ValueResolver.parseDisplayValue(getMimeType(), value.getValue(), displayExpression),
+        getDisplayDecorationPattern(),
+        getDisplayDecorationReplacement());
       return new RestListParameterDefinition(
         getName(), getDescription(), getRestEndpoint(), getCredentialId(), getMimeType(),
-        getValueExpression(), getDisplayExpression(), getValueOrder(), getFilter(), getCacheTime(),
-        ValueResolver.parseDisplayValue(getMimeType(), value.getValue(), displayExpression),
+        getValueExpression(), getDisplayExpression(),
+        getDisplayDecorationPattern(), getDisplayDecorationReplacement(),
+        getValueOrder(), getFilter(), getCacheTime(),
+        defaultDisplay,
         isAllowEmptyValue(), getValues());
     }
     else {
@@ -285,7 +319,8 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
   public int hashCode() {
     return Objects.hash(
       getName(), getDescription(), getRestEndpoint(), getCredentialId(),
-      getMimeType(), getValueExpression(), getFilter(), allowEmptyValue);
+      getMimeType(), getValueExpression(), getFilter(), allowEmptyValue,
+      getDisplayDecorationPattern(), getDisplayDecorationReplacement());
   }
 
   @Override
@@ -319,6 +354,12 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
       return false;
     }
     if (allowEmptyValue != other.allowEmptyValue) {
+      return false;
+    }
+    if (!Objects.equals(getDisplayDecorationPattern(), other.getDisplayDecorationPattern())) {
+      return false;
+    }
+    if (!Objects.equals(getDisplayDecorationReplacement(), other.getDisplayDecorationReplacement())) {
       return false;
     }
     return Objects.equals(defaultValue, other.defaultValue);
@@ -424,7 +465,9 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
                                               @QueryParameter final String valueExpression,
                                               @QueryParameter final String displayExpression,
                                               @QueryParameter final String filter,
-                                              @QueryParameter final ValueOrder valueOrder)
+                                              @QueryParameter final ValueOrder valueOrder,
+                                              @QueryParameter final String displayDecorationPattern,
+                                              @QueryParameter final String displayDecorationReplacement)
     {
       if (context == null) {
         Jenkins.get().checkPermission(Jenkins.ADMINISTER);
@@ -455,7 +498,9 @@ public final class RestListParameterDefinition extends SimpleParameterDefinition
         valueExpression,
         !displayExpression.isBlank() ? displayExpression : "$",
         filter,
-        valueOrder);
+        valueOrder,
+        displayDecorationPattern != null ? displayDecorationPattern : "",
+        displayDecorationReplacement != null ? displayDecorationReplacement : "");
 
       Optional<String> errorMsg = container.getErrorMsg();
       List<ValueItem> values = container.getValue();

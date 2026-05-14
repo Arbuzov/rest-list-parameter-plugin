@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ValueResolver {
@@ -203,6 +204,36 @@ public class ValueResolver {
 
   private static String parseDisplayValue(String jsonStr, String displayExpression) {
     return JsonPath.parse(jsonStr).read(displayExpression, String.class);
+  }
+
+  /**
+   * Apply an optional regex-based decoration (e.g. trim a prefix, append a suffix, capture groups
+   * into a template) to a display value. Both the {@code pattern} and {@code replacement} come from
+   * the parameter configuration. The transformation is intentionally limited to the display value —
+   * the underlying {@code value} fed into the pipeline is never modified.
+   *
+   * @param displayValue The display value to decorate.
+   * @param pattern      A Java regex pattern. If {@code null}/blank, the input is returned as-is.
+   * @param replacement  A replacement template (supports back-references like {@code $1}). May be
+   *                     {@code null}, treated as empty string.
+   * @return The decorated display value, or the unchanged input if no pattern is set or the pattern
+   * cannot be compiled.
+   */
+  public static String applyDisplayDecoration(final String displayValue,
+                                              final String pattern,
+                                              final String replacement)
+  {
+    if (displayValue == null || pattern == null || pattern.isEmpty()) {
+      return displayValue;
+    }
+    String safeReplacement = replacement != null ? replacement : "";
+    try {
+      return Pattern.compile(pattern).matcher(displayValue).replaceAll(safeReplacement);
+    }
+    catch (IllegalArgumentException | IndexOutOfBoundsException ex) {
+      log.warning(Messages.RLP_ValueResolver_warn_decoration_BadPattern(ex.getClass().getName()));
+      return displayValue;
+    }
   }
 
   /**

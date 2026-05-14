@@ -29,6 +29,14 @@
         <f:textbox default="" checkMethod="post" />
       </f:entry>
 
+      <f:entry title="${%parameter.displayDecorationPattern}" field="displayDecorationPattern">
+        <f:textbox default="" />
+      </f:entry>
+
+      <f:entry title="${%parameter.displayDecorationReplacement}" field="displayDecorationReplacement">
+        <f:textbox default="" />
+      </f:entry>
+
       <f:entry title="${%parameter.cacheTime}" field="cacheTime">
         <f:number default="${descriptor.getDefaultCacheTime()}" checkMethod="post"/>
       </f:entry>
@@ -55,7 +63,7 @@
       title="${%parameter.testConfig}"
       progress="${%parameter.testing}"
       method="testConfiguration"
-      with="restEndpoint,credentialId,mimeType,valueExpression,displayExpression,filter,valueOrder"
+      with="restEndpoint,credentialId,mimeType,valueExpression,displayExpression,filter,valueOrder,displayDecorationPattern,displayDecorationReplacement"
   />
 
   <f:entry title="${%parameter.description}" field="description">

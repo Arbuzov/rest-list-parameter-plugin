@@ -60,6 +60,28 @@ public class RestValueService {
                                                      final String filter,
                                                      final ValueOrder order)
   {
+    return get(restEndpoint, credentials, mimeType, cacheTime, valueExpression, displayExpression,
+               filter, order, "", "");
+  }
+
+  /**
+   * Variant of {@link #get(String, StandardCredentials, MimeType, Integer, String, String, String, ValueOrder)}
+   * that additionally applies a regex-based decoration to each display value.
+   *
+   * @param displayDecorationPattern     Java regex pattern applied to every display value (blank = no-op).
+   * @param displayDecorationReplacement Replacement template (supports back-references like {@code $1}).
+   */
+  public static ResultContainer<List<ValueItem>> get(final String restEndpoint,
+                                                     final StandardCredentials credentials,
+                                                     final MimeType mimeType,
+                                                     final Integer cacheTime,
+                                                     final String valueExpression,
+                                                     final String displayExpression,
+                                                     final String filter,
+                                                     final ValueOrder order,
+                                                     final String displayDecorationPattern,
+                                                     final String displayDecorationReplacement)
+  {
     ResultContainer<List<ValueItem>> valueList = new ResultContainer<>(Collections.emptyList());
     ResultContainer<String> rawValues = getValueStringFromRestEndpoint(restEndpoint, credentials, mimeType, cacheTime);
     Optional<String> rawValueError = rawValues.getErrorMsg();
@@ -71,11 +93,28 @@ public class RestValueService {
       valueList.setErrorMsg(rawValueError.get());
     }
 
+    if (!valueList.getErrorMsg().isPresent() && isDecorationSet(displayDecorationPattern)) {
+      decorateDisplayValues(valueList.getValue(), displayDecorationPattern, displayDecorationReplacement);
+    }
+
     if (!valueList.getErrorMsg().isPresent() && isFilterOrOrderSet(filter, order)) {
       valueList = filterAndSortValues(valueList.getValue(), filter, order);
     }
 
     return valueList;
+  }
+
+  private static void decorateDisplayValues(final List<ValueItem> values,
+                                            final String pattern,
+                                            final String replacement)
+  {
+    for (ValueItem item : values) {
+      item.setDisplayValue(ValueResolver.applyDisplayDecoration(item.getDisplayValue(), pattern, replacement));
+    }
+  }
+
+  private static boolean isDecorationSet(String pattern) {
+    return pattern != null && !pattern.isBlank();
   }
 
   /**

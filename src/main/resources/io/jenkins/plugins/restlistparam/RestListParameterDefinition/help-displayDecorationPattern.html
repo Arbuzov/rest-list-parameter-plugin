@@ -1,0 +1,13 @@
+<div>
+  An optional <b>Java regular expression</b> applied to every <em>display value</em> (what the user sees in the
+  dropdown). The actual parameter value passed to the build is <strong>never modified</strong> by this option.
+  <br/>
+  Use it together with <em>Display Decoration Replacement</em> to:
+  <ul>
+    <li>Strip a prefix (pattern <code>^v</code>, replacement empty) &rarr; <code>v10.7.7</code> &rarr; <code>10.7.7</code></li>
+    <li>Append a suffix (pattern <code>$</code>, replacement <code>&nbsp;(stable)</code>) &rarr; <code>10.7.7</code> &rarr; <code>10.7.7 (stable)</code></li>
+    <li>Reformat with capture groups (pattern <code>^v(\d+\.\d+\.\d+).*</code>, replacement <code>Release&nbsp;$1</code>)</li>
+  </ul>
+  Leave empty to keep display values unchanged. An invalid pattern is logged as a warning and the original display
+  value is shown.
+</div>
