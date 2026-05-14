@@ -3,7 +3,7 @@
 :toc: macro
 :toc-title:
 
-image:https://ci.jenkins.io/job/Plugins/job/rest-list-parameter-plugin/job/main/badge/icon[link="https://ci.jenkins.io/job/Plugins/job/rest-list-parameter-plugin/job/main/"]
+image:https://github.com/jenkinsci/rest-list-parameter-plugin/actions/workflows/cd.yaml/badge.svg?branch=main[link="https://github.com/jenkinsci/rest-list-parameter-plugin/actions/workflows/cd.yaml"]
 image:https://img.shields.io/codefactor/grade/github/jenkinsci/rest-list-parameter-plugin/main.svg[CodeFactor Grade,link="https://www.codefactor.io/repository/github/jenkinsci/rest-list-parameter-plugin"]
 image:https://img.shields.io/github/license/jenkinsci/rest-list-parameter-plugin.svg?color=green[link="https://github.com/jenkinsci/rest-list-parameter-plugin/blob/main/LICENSE"]
 image:https://img.shields.io/maintenance/yes/2024.svg[link="https://github.com/jenkinsci/rest-list-parameter-plugin"]
